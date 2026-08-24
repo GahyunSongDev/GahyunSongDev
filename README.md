@@ -11,7 +11,7 @@ Currently studying for my **AWS Certified Solutions Architect – Associate** an
 ### EKS GitOps & Blue-Green Deployment — KT Cloud × Groom Bootcamp
 [View Repo →](https://github.com/team4-coding-gamja/UNBOX-INFRA.git)
 
-Led a 3-phase infrastructure evolution (MVP CRUD → ECS CI/CD → EKS GitOps) for a 5-microservice system. Self-studied ArgoCD and Argo Rollouts after a mentor's suggestion and delivered a full Blue-Green deployment system with my team — **awarded Best Team (1st out of 4 teams)**.
+Contributed to a 3-phase infrastructure evolution (MVP CRUD → ECS CI/CD → EKS GitOps) for a 5-microservice system as part of a 4-person team. Self-studied ArgoCD and Argo Rollouts after a mentor's suggestion and helped deliver a full Blue-Green deployment system — **team awarded Best Team (1st out of 4 teams)**.
 
 - **Eliminated 2–3 min downtime** by migrating from ECS Rolling Update to EKS + Argo Rollouts Blue-Green strategy; achieved 100% availability across 5 microservices
 - **Reduced build time 68%** (25 min → 8 min) via Gradle dependency caching + Docker layer caching on ECR buildcache; cut image size 66% with multi-stage builds
