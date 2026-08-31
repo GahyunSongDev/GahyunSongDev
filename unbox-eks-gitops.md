@@ -16,13 +16,13 @@ A C2C resale marketplace backend that evolved through three infrastructure gener
 | CI | Basic script | GitHub Actions per service | GitHub Actions (OIDC-based ECR auth) |
 | CD | Manual redeploy | Dev: Rolling Update / Prod: Blue-Green + Canary (CodeDeploy) | ArgoCD GitOps + Argo Rollouts (per-service strategy) |
 | Downtime | N/A (single instance) | Dev: 5-10s / Prod: 0s | 0s across all services, automated rollback |
-| My role | - | CI/CD pipeline design | CI/CD architecture (GitHub Actions + ArgoCD/Argo Rollouts); infra provisioning co-designed with a teammate who owned Terraform |
+| My role | Review domain CRUD | CI/CD pipeline design + ECS Terraform provisioning (co-designed with teammate) | CI/CD architecture (GitHub Actions + ArgoCD/Argo Rollouts); infra provisioning co-designed with a teammate who owned Terraform |
 
 ---
 
 ## Stage 1 — MVP: Prove the Core Flow
 
-Scope: Member auth, product catalog, bidding, order matching (Redis lock for race conditions), inspection/shipping status flow, and reviews with Redis-cached reads.
+Scope: Member auth, product catalog, bidding, order matching (Redis lock for race conditions), inspection/shipping status flow, and reviews with Redis-cached reads. My contribution at this stage was the Review domain CRUD (create/read reviews tied to completed orders, with Redis-cached reads for performance).
 
 Deliberately minimal: single VPC, one public subnet for the app, Docker Compose bundling Spring Boot + Redis on one EC2 instance, single-AZ RDS. The goal was validating the resale-matching logic (lowest-price bid matching under concurrent requests) and getting a working demo fast — not production infrastructure.
 
@@ -30,7 +30,7 @@ Deliberately minimal: single VPC, one public subnet for the app, Docker Compose 
 
 ## Stage 2 — 1st Advancement: Service Split + Dual-Track CI/CD
 
-What changed: Mono repo to 5 independently deployable services on ECS Fargate, each with its own CI/CD pipeline, provisioned via Terraform.
+What changed: Mono repo to 5 independently deployable services on ECS Fargate, each with its own CI/CD pipeline, provisioned via Terraform. Beyond designing the CI/CD pipelines themselves, I co-designed the ECS infrastructure provisioning in Terraform together with a teammate.
 
 ![ECS Fargate Blue-Green CI/CD pipeline](./assets/unbox/cicd-1st-pipeline.png)
 
@@ -131,4 +131,4 @@ Prometheus + Grafana for metrics, Loki for centralized logs, Tempo for distribut
 
 ## Notes on Attribution
 
-This was a 5-person team project. I owned CI/CD design across all three stages — the GitHub Actions pipelines, the dual-track Dev/Prod deployment strategy on ECS, and the ArgoCD + Argo Rollouts GitOps migration and per-service strategy design on EKS. Terraform infrastructure provisioning for the final EKS stage was co-designed with a teammate who implemented the modules; application-layer work (concurrency control, caching, event-driven patterns) was owned by other team members and is documented in their respective sections of the repo.
+This was a 5-person team project. At MVP stage I built the Review domain CRUD. From the 1st Advancement onward I owned CI/CD design — the GitHub Actions pipelines, the dual-track Dev/Prod deployment strategy on ECS, and the ArgoCD + Argo Rollouts GitOps migration and per-service strategy design on EKS — and co-designed the underlying Terraform infrastructure provisioning (ECS in the 1st Advancement, EKS in the final stage) together with a teammate who implemented the Terraform modules. Application-layer work (concurrency control, caching, event-driven patterns) was owned by other team members and is documented in their respective sections of the repo.
