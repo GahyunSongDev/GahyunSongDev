@@ -9,7 +9,7 @@ Currently studying for my **AWS Certified Solutions Architect – Associate** an
 ## Featured Projects
 
 ### EKS GitOps & Blue-Green Deployment — KT Cloud × Groom Bootcamp
-[View Repo →](https://github.com/team4-coding-gamja/UNBOX-INFRA.git)
+[View Repo →](https://github.com/team4-coding-gamja/UNBOX-INFRA.git) · [Full Write-up →](./unbox-eks-gitops.md)
 
 Contributed to a 3-phase infrastructure evolution (MVP CRUD → ECS CI/CD → EKS GitOps) for a 5-microservice system as part of a 4-person team. After self-studying ArgoCD and Argo Rollouts on a mentor's suggestion, I built and delivered the team's full Blue-Green deployment system — **team awarded Best Team (1st out of 4 teams)**.
 
