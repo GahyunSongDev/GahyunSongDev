@@ -22,6 +22,14 @@ Contributed to a 3-phase infrastructure evolution (MVP CRUD → ECS CI/CD → EK
 
 ---
 
+### Automatic Document Verification — Moonbeam (Capstone II)
+
+Capstone project for a startup neobank serving U.S. military veterans, working directly with the company's CEO and CTO as project sponsors. Contributed to an automated document-verification pipeline on AWS (event-driven, replacing a manual military-ID review process) and co-authored the system design documentation.
+
+*Details withheld — project was covered under an NDA with the sponsor company.*
+
+---
+
 ### Serverless Event-Driven Infrastructure — Code States Bootcamp
 [View Repo →](https://github.com/gahyun8876/practice-final.git)
 
