@@ -7,14 +7,16 @@
 
   <rect x="0" y="0" width="1400" height="460" fill="#FFFFFF"/>
 
+  <!-- Title -->
   <text x="40" y="46" font-size="22" font-weight="700" fill="#1B2333">Infrastructure &amp; CI/CD Evolution</text>
-  <text x="40" y="70" font-size="13" fill="#6B7280">MVP -&gt; 1st Advancement -&gt; 2nd Advancement (Final)</text>
+  <text x="40" y="70" font-size="13" fill="#6B7280">MVP → 1st Advancement → 2nd Advancement (Final)</text>
 
+  <!-- ================= STAGE 1: MVP ================= -->
   <g>
     <rect x="75" y="120" width="220" height="230" rx="10" fill="#F8FAFC" stroke="#CBD5E1" stroke-width="1.5"/>
     <rect x="75" y="120" width="220" height="34" rx="10" fill="#64748B"/>
     <rect x="75" y="136" width="220" height="18" fill="#64748B"/>
-    <text x="185" y="143" text-anchor="middle" font-size="13" font-weight="700" fill="#FFFFFF">STAGE 1 : MVP</text>
+    <text x="185" y="143" text-anchor="middle" font-size="13" font-weight="700" fill="#FFFFFF">STAGE 1 · MVP</text>
 
     <text x="95" y="180" font-size="13" font-weight="700" fill="#1B2333">Docker Compose</text>
     <text x="95" y="198" font-size="13" font-weight="700" fill="#1B2333">Single EC2</text>
@@ -32,22 +34,24 @@
 
   <path d="M295 235 L385 235" stroke="#94A3B8" stroke-width="2" marker-end="url(#arrow)"/>
 
+  <!-- ================= STAGE 2: 1st Advancement ================= -->
   <g>
     <rect x="385" y="105" width="420" height="260" rx="10" fill="#FFFBEB" stroke="#FCD34D" stroke-width="1.5"/>
     <rect x="385" y="105" width="420" height="34" rx="10" fill="#F59E0B"/>
     <rect x="385" y="121" width="420" height="18" fill="#F59E0B"/>
-    <text x="595" y="128" text-anchor="middle" font-size="13" font-weight="700" fill="#FFFFFF">STAGE 2 : 1st ADVANCEMENT</text>
+    <text x="595" y="128" text-anchor="middle" font-size="13" font-weight="700" fill="#FFFFFF">STAGE 2 · 1st ADVANCEMENT</text>
 
     <text x="405" y="165" font-size="13" font-weight="700" fill="#1B2333">Terraform + ECS Fargate</text>
-    <text x="405" y="183" font-size="13" font-weight="700" fill="#1B2333">Mono repo -&gt; 5 services</text>
+    <text x="405" y="183" font-size="13" font-weight="700" fill="#1B2333">Mono repo → 5 services</text>
 
     <line x1="405" y1="197" x2="785" y2="197" stroke="#FDE68A"/>
 
+    <!-- Dev / Prod split -->
     <rect x="405" y="210" width="185" height="130" rx="6" fill="#FFFFFF" stroke="#FDE68A"/>
     <text x="415" y="230" font-size="11" font-weight="700" fill="#92400E">DEV</text>
     <text x="415" y="248" font-size="11" fill="#4B5563">Rolling Update</text>
-    <text x="415" y="264" font-size="11" fill="#4B5563">2-3 min, no approval</text>
-    <text x="415" y="280" font-size="11" fill="#4B5563">Downtime: 5-10s</text>
+    <text x="415" y="264" font-size="11" fill="#4B5563">2–3 min, no approval</text>
+    <text x="415" y="280" font-size="11" fill="#4B5563">Downtime: 5–10s</text>
     <text x="415" y="300" font-size="10.5" fill="#9CA3AF">Fast feedback loop</text>
 
     <rect x="600" y="210" width="185" height="130" rx="6" fill="#FFFFFF" stroke="#FDE68A"/>
@@ -56,28 +60,31 @@
     <text x="610" y="264" font-size="11" fill="#4B5563">CodeDeploy, 15+ min</text>
     <text x="610" y="280" font-size="11" fill="#4B5563">Downtime: 0s</text>
     <text x="610" y="300" font-size="10.5" fill="#9CA3AF">3-stage guardrail</text>
+
+    <rect x="405" y="345" width="380" height="0" opacity="0"/>
   </g>
 
   <path d="M805 235 L895 235" stroke="#94A3B8" stroke-width="2" marker-end="url(#arrow)"/>
 
+  <!-- ================= STAGE 3: 2nd Advancement ================= -->
   <g>
     <rect x="895" y="90" width="420" height="290" rx="10" fill="#101826"/>
     <rect x="895" y="90" width="420" height="34" rx="10" fill="#0EA5A4"/>
     <rect x="895" y="106" width="420" height="18" fill="#0EA5A4"/>
-    <text x="1105" y="113" text-anchor="middle" font-size="13" font-weight="700" fill="#0B1220">STAGE 3 : 2ND ADVANCEMENT (FINAL)</text>
+    <text x="1105" y="113" text-anchor="middle" font-size="13" font-weight="700" fill="#0B1220">STAGE 3 · 2ND ADVANCEMENT (FINAL)</text>
 
     <text x="915" y="152" font-size="13" font-weight="700" fill="#F5F7FA">EKS + ArgoCD GitOps</text>
-    <text x="915" y="170" font-size="13" font-weight="700" fill="#F5F7FA">Argo Rollouts per service</text>
+    <text x="915" y="170" font-size="13" font-weight="700" fill="#F5F7FA">Argo Rollouts, Blue-Green (all 5)</text>
 
     <line x1="915" y1="184" x2="1295" y2="184" stroke="#293449"/>
 
-    <text x="915" y="206" font-size="11.5" fill="#C7D0DD">Payment / User -&gt; Blue-Green</text>
-    <text x="915" y="224" font-size="11.5" fill="#C7D0DD">Trade / Order -&gt; Canary + AnalysisRun</text>
-    <text x="915" y="242" font-size="11.5" fill="#C7D0DD">Product -&gt; Canary + Feature Flag</text>
+    <text x="915" y="206" font-size="11.5" fill="#C7D0DD">All 5 services → Blue-Green</text>
+    <text x="915" y="224" font-size="11.5" fill="#C7D0DD">Payment adds a Manual Gate</text>
+    <text x="915" y="242" font-size="10.5" fill="#8B96A8">Canary piloted, moved off pre-launch</text>
 
     <rect x="915" y="260" width="360" height="44" rx="6" fill="#182236"/>
     <text x="925" y="277" font-size="10.5" fill="#8B96A8">Result</text>
-    <text x="925" y="294" font-size="12" font-weight="700" fill="#4FD1C5">0s downtime : MTTR 90% down : Lead time 60% down</text>
+    <text x="925" y="294" font-size="12" font-weight="700" fill="#4FD1C5">0s downtime · MTTR 90%↓ · Lead time 60%↓</text>
 
     <text x="915" y="330" font-size="10.5" fill="#8B96A8">My role: CI/CD architecture (GitHub Actions + ArgoCD/</text>
     <text x="915" y="345" font-size="10.5" fill="#8B96A8">Argo Rollouts). Terraform infra co-designed with teammate.</text>
