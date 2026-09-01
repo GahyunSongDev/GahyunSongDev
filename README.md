@@ -58,4 +58,4 @@ Designed and built a serverless, event-driven backend architecture (API Gateway 
 
 ## Let's Connect
 
-[LinkedIn](https://linkedin.com/in/gahyun-song-4634b8196) · gahyun8876@gmail.com
+[LinkedIn](https://linkedin.com/in/gahyun-song-4634b8196) · gahyun.song0816@gmail.com
