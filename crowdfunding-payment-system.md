@@ -12,7 +12,7 @@ Build a stable, scalable crowdfunding platform on cloud-native AWS infrastructur
 
 ## Architecture
 
-![Payment workflow system architecture diagram](./assets/crowdfunding/crowdfunding-architecture-diagram.png)
+![Payment workflow system architecture diagram](./assets/unbox/crowdfunding-architecture-diagram.png)
 
 The flow: a broker Lambda behind API Gateway routes incoming requests by publishing to the right SNS topic (payment_attempt, approve_payment, goal_achievement), each topic fans out to an SQS queue, and a purpose-built Lambda consumes each queue — a PG Lambda for the payment gateway integration, a FundingUpdate Lambda that updates campaign funding status, and a TransactionCheck Lambda that verifies transaction state. A SendEmail Lambda, triggered off its own send_email topic, notifies users of the result. Anything that fails processing lands in a DLQ instead of disappearing silently.
 
