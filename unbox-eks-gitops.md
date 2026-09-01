@@ -68,7 +68,7 @@ For the full picture of where this pipeline runs — VPC layout, node groups, RD
 
 ### Per-service deployment strategy — decision framework
 
-Rather than one strategy platform-wide, I initially evaluated each service against two questions: "What breaks if this deploy fails?" (blast radius) and "Can old/new versions safely coexist?" (coexistence).
+The plan for this stage was to pilot Canary on a subset of services in Dev while studying the strategy space, then decide the Prod-level approach based on what we learned. I evaluated each service against two questions: "What breaks if this deploy fails?" (blast radius) and "Can old/new versions safely coexist?" (coexistence).
 
 | Service | Failure Impact | Coexistence | Initial Strategy |
 |---|---|---|---|
@@ -77,15 +77,17 @@ Rather than one strategy platform-wide, I initially evaluated each service again
 | Trade / Order | Revenue-critical / retryable | Yes - Canary-verifiable | Canary + AnalysisRun (auto-promote on metrics) |
 | Product | Traffic bottleneck (90%+ of traffic) | Yes - Canary-verifiable | Canary + Feature Flag |
 
-### Why we consolidated everything to Blue-Green
+Payment and User were Blue-Green from the start — JWT incompatibility and payment transaction risk made Canary a non-starter for those two. Trade, Order, and Product were piloted with Canary in Dev.
 
-Ahead of the final demo, Canary stopped being reliable in our environment, for two compounding reasons.
+### Why we moved everything to Blue-Green for Prod
 
-**Traffic volume was too low for AnalysisRun to be trustworthy.** Canary's metric-based auto-promotion assumes production-scale traffic; at a 10% canary weight in our demo/staging setup, sample sizes were tiny. This showed up directly during Payment testing: a canary run flagged a 14.8% error rate against a 0.5% threshold, but that number came from roughly 30 requests total — nowhere near enough to distinguish a real regression from noise. Canary is fundamentally a production tool that needs production-scale traffic to be statistically meaningful; it's a poor fit for a lower-traffic staging or demo environment.
+Two problems surfaced during that Dev-environment piloting.
 
-**Linkerd's traffic-split layer added its own instability.** Canary routing depended on Linkerd's SMI TrafficSplit resource across all five services, which introduced a whole extra failure surface on top of the application layer — pods failing to get their Linkerd identity injected, intermittent 503s tied to the mesh rather than the app itself. Blue-Green sidesteps this entirely: it's a single Service-selector switch, with no traffic-split resource that needs to stay healthy.
+**Traffic volume was too low for AnalysisRun to be trustworthy.** Canary's metric-based auto-promotion assumes production-scale traffic; at a 10% canary weight in Dev, sample sizes were tiny. This showed up directly during Payment testing: a canary run flagged a 14.8% error rate against a 0.5% threshold, but that number came from roughly 30 requests total — nowhere near enough to distinguish a real regression from noise.
 
-So we moved all 5 services to Blue-Green for the final deployment. The pattern matches what's commonly seen in production too — Canary earns its complexity when there's real production traffic volume to analyze; in staging/demo-scale environments, Blue-Green's clean all-or-nothing switch is the more dependable choice.
+**Linkerd's traffic-split layer added its own instability.** Canary routing depended on Linkerd's SMI TrafficSplit resource, which introduced a whole extra failure surface on top of the application layer — pods failing to get their Linkerd identity injected, intermittent 503s tied to the mesh rather than the app itself. Blue-Green sidesteps this entirely: it's a single Service-selector switch, with no traffic-split resource that needs to stay healthy.
+
+Based on what we learned piloting Canary in Dev, we decided Prod should run all 5 services on Blue-Green instead, and moved everything over ahead of the final presentation. Canary earns its complexity when there's enough real traffic volume for its metrics to be statistically meaningful — our environment never had that, so the simpler, more predictable Blue-Green switch was the better call.
 
 This mirrors the project's 3rd goal for the final stage — zero-downtime deployment — alongside observability and efficient scaling as the other two pillars.
 
@@ -98,10 +100,10 @@ A key constraint specific to this domain: the moment traffic shifts to a new ver
 | Metric | 1st Advancement (ECS) | 2nd Advancement (EKS) |
 |---|---|---|
 | Prod downtime | 0s (Blue-Green) | 0s, 100% session preservation (User) |
-| Rollback trigger | CloudWatch Alarm (5xx/latency) | Prometheus AnalysisRun during Canary testing; consolidated to Blue-Green switch for final deploy |
+| Rollback trigger | CloudWatch Alarm (5xx/latency) | Prometheus AnalysisRun during Dev Canary piloting; consolidated to Blue-Green switch for Prod |
 | MTTR | Manual rollback ~5 min | Automated rollback ~30s (90% reduction) |
 | Deploy lead time | 15 min (prod) | 6 min (60% improvement); Order: 30min to 6.5min (78% down) |
-| Blast radius control | Canary 10% (5 min bake) | Blue-Green all-or-nothing switch (Canary piloted, moved off due to traffic-volume and Linkerd mesh reliability) |
+| Blast radius control | Canary 10% (5 min bake) | Blue-Green all-or-nothing switch (Canary piloted in Dev, moved off before Prod due to traffic-volume and Linkerd mesh reliability) |
 
 ---
 
@@ -111,15 +113,15 @@ A key constraint specific to this domain: the moment traffic shifts to a new ver
 |---|---|
 | ![](./assets/unbox/demo-user-bluegreen.gif) | User service Blue-Green — 0s downtime, 100% session preservation |
 | ![](./assets/unbox/demo-user-rollback.gif) | User service instant abort/rollback (<3s) on detected failure |
-| ![](./assets/unbox/demo-order-canary.gif) | Order service Canary promotion (10% to 100%) with automated analysis — piloted during development |
-| ![](./assets/unbox/demo-product-canary.gif) | Product service baseline Canary deployment — piloted during development |
+| ![](./assets/unbox/demo-order-canary.gif) | Order service Canary promotion (10% to 100%) with automated analysis — piloted in Dev |
+| ![](./assets/unbox/demo-product-canary.gif) | Product service baseline Canary deployment — piloted in Dev |
 | ![](./assets/unbox/demo-product-featureflag.gif) | Product service Feature Flag — forced routing via header |
 
 ## Observability
 
 ![Grafana dashboard - API performance](./assets/unbox/dashboard-api-performance.png)
 
-Prometheus + Grafana for metrics, Loki for centralized logs, Tempo for distributed tracing (LGTM stack) — this is what the AnalysisRun gates read from during the Canary testing phase described above.
+Prometheus + Grafana for metrics, Loki for centralized logs, Tempo for distributed tracing (LGTM stack) — this is what the AnalysisRun gates read from during the Dev Canary piloting described above.
 
 ---
 
@@ -141,4 +143,4 @@ Prometheus + Grafana for metrics, Loki for centralized logs, Tempo for distribut
 
 ## Notes on Attribution
 
-This was a 5-person team project. At MVP stage I built the Review domain CRUD. From the 1st Advancement onward I owned CI/CD design — the GitHub Actions pipelines, the dual-track Dev/Prod deployment strategy on ECS, and the ArgoCD + Argo Rollouts GitOps migration and per-service strategy design on EKS, including the decision to consolidate from a mixed Canary/Blue-Green approach to Blue-Green across all services — and co-designed the underlying Terraform infrastructure provisioning (ECS in the 1st Advancement, EKS in the final stage) together with a teammate who implemented the Terraform modules. Application-layer work (concurrency control, caching, event-driven patterns) was owned by other team members and is documented in their respective sections of the repo.
+This was a 5-person team project. At MVP stage I built the Review domain CRUD. From the 1st Advancement onward I owned CI/CD design — the GitHub Actions pipelines, the dual-track Dev/Prod deployment strategy on ECS, and the ArgoCD + Argo Rollouts GitOps migration and per-service strategy design on EKS, including the decision to move Prod from a mixed Canary/Blue-Green plan to Blue-Green across all services — and co-designed the underlying Terraform infrastructure provisioning (ECS in the 1st Advancement, EKS in the final stage) together with a teammate who implemented the Terraform modules. Application-layer work (concurrency control, caching, event-driven patterns) was owned by other team members and is documented in their respective sections of the repo.
