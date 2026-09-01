@@ -14,7 +14,7 @@ A C2C resale marketplace backend that evolved through three infrastructure gener
 | Compute | 1x EC2 (t3.micro), Docker Compose | ECS Fargate, mono repo to 5 services | EKS (Managed Node Group + Karpenter option) |
 | IaC | Manual / minimal Terraform | Terraform, single main.tf | Terraform, modularized (vpc/eks/rds/redis) |
 | CI | Basic script | GitHub Actions per service | GitHub Actions (OIDC-based ECR auth) |
-| CD | Manual redeploy | Dev: Rolling Update / Prod: Blue-Green + Canary (CodeDeploy) | ArgoCD GitOps + Argo Rollouts (per-service strategy) |
+| CD | Manual redeploy | Dev: Rolling Update / Prod: Blue-Green + Canary (CodeDeploy) | ArgoCD GitOps + Argo Rollouts, Blue-Green across all 5 services |
 | Downtime | N/A (single instance) | Dev: 5-10s / Prod: 0s | 0s across all services, automated rollback |
 | My role | Review domain CRUD | CI/CD pipeline design + ECS Terraform provisioning (co-designed with teammate) | CI/CD architecture (GitHub Actions + ArgoCD/Argo Rollouts); infra provisioning co-designed with a teammate who owned Terraform |
 
@@ -68,14 +68,24 @@ For the full picture of where this pipeline runs — VPC layout, node groups, RD
 
 ### Per-service deployment strategy — decision framework
 
-Rather than one strategy platform-wide, I evaluated each service against two questions: "What breaks if this deploy fails?" (blast radius) and "Can old/new versions safely coexist?" (coexistence).
+Rather than one strategy platform-wide, I initially evaluated each service against two questions: "What breaks if this deploy fails?" (blast radius) and "Can old/new versions safely coexist?" (coexistence).
 
-| Service | Failure Impact | Coexistence | Strategy |
+| Service | Failure Impact | Coexistence | Initial Strategy |
 |---|---|---|---|
-| Payment | Financial data corruption | No - Transaction conflict risk | Blue-Green + Manual Gate (auto-rollout risks data integrity) |
+| Payment | Financial data corruption | No - Transaction conflict risk | Blue-Green + Manual Gate |
 | User | Platform-wide auth failure | No - JWT incompatible across versions | Blue-Green |
 | Trade / Order | Revenue-critical / retryable | Yes - Canary-verifiable | Canary + AnalysisRun (auto-promote on metrics) |
 | Product | Traffic bottleneck (90%+ of traffic) | Yes - Canary-verifiable | Canary + Feature Flag |
+
+### Why we consolidated everything to Blue-Green
+
+Ahead of the final demo, Canary stopped being reliable in our environment, for two compounding reasons.
+
+**Traffic volume was too low for AnalysisRun to be trustworthy.** Canary's metric-based auto-promotion assumes production-scale traffic; at a 10% canary weight in our demo/staging setup, sample sizes were tiny. This showed up directly during Payment testing: a canary run flagged a 14.8% error rate against a 0.5% threshold, but that number came from roughly 30 requests total — nowhere near enough to distinguish a real regression from noise. Canary is fundamentally a production tool that needs production-scale traffic to be statistically meaningful; it's a poor fit for a lower-traffic staging or demo environment.
+
+**Linkerd's traffic-split layer added its own instability.** Canary routing depended on Linkerd's SMI TrafficSplit resource across all five services, which introduced a whole extra failure surface on top of the application layer — pods failing to get their Linkerd identity injected, intermittent 503s tied to the mesh rather than the app itself. Blue-Green sidesteps this entirely: it's a single Service-selector switch, with no traffic-split resource that needs to stay healthy.
+
+So we moved all 5 services to Blue-Green for the final deployment. The pattern matches what's commonly seen in production too — Canary earns its complexity when there's real production traffic volume to analyze; in staging/demo-scale environments, Blue-Green's clean all-or-nothing switch is the more dependable choice.
 
 This mirrors the project's 3rd goal for the final stage — zero-downtime deployment — alongside observability and efficient scaling as the other two pillars.
 
@@ -88,10 +98,10 @@ A key constraint specific to this domain: the moment traffic shifts to a new ver
 | Metric | 1st Advancement (ECS) | 2nd Advancement (EKS) |
 |---|---|---|
 | Prod downtime | 0s (Blue-Green) | 0s, 100% session preservation (User) |
-| Rollback trigger | CloudWatch Alarm (5xx/latency) | Prometheus AnalysisRun (error rate, latency, success rate) |
+| Rollback trigger | CloudWatch Alarm (5xx/latency) | Prometheus AnalysisRun during Canary testing; consolidated to Blue-Green switch for final deploy |
 | MTTR | Manual rollback ~5 min | Automated rollback ~30s (90% reduction) |
 | Deploy lead time | 15 min (prod) | 6 min (60% improvement); Order: 30min to 6.5min (78% down) |
-| Blast radius control | Canary 10% (5 min bake) | Canary 10 to 25 to 50 to 75 to 100% + AnalysisRun gates |
+| Blast radius control | Canary 10% (5 min bake) | Blue-Green all-or-nothing switch (Canary piloted, moved off due to traffic-volume and Linkerd mesh reliability) |
 
 ---
 
@@ -101,15 +111,15 @@ A key constraint specific to this domain: the moment traffic shifts to a new ver
 |---|---|
 | ![](./assets/unbox/demo-user-bluegreen.gif) | User service Blue-Green — 0s downtime, 100% session preservation |
 | ![](./assets/unbox/demo-user-rollback.gif) | User service instant abort/rollback (<3s) on detected failure |
-| ![](./assets/unbox/demo-order-canary.gif) | Order service Canary promotion (10% to 100%) with automated analysis |
-| ![](./assets/unbox/demo-product-canary.gif) | Product service baseline Canary deployment |
+| ![](./assets/unbox/demo-order-canary.gif) | Order service Canary promotion (10% to 100%) with automated analysis — piloted during development |
+| ![](./assets/unbox/demo-product-canary.gif) | Product service baseline Canary deployment — piloted during development |
 | ![](./assets/unbox/demo-product-featureflag.gif) | Product service Feature Flag — forced routing via header |
 
 ## Observability
 
 ![Grafana dashboard - API performance](./assets/unbox/dashboard-api-performance.png)
 
-Prometheus + Grafana for metrics, Loki for centralized logs, Tempo for distributed tracing (LGTM stack) — this is what the AnalysisRun gates in the deployment strategy above actually read from.
+Prometheus + Grafana for metrics, Loki for centralized logs, Tempo for distributed tracing (LGTM stack) — this is what the AnalysisRun gates read from during the Canary testing phase described above.
 
 ---
 
@@ -131,4 +141,4 @@ Prometheus + Grafana for metrics, Loki for centralized logs, Tempo for distribut
 
 ## Notes on Attribution
 
-This was a 5-person team project. At MVP stage I built the Review domain CRUD. From the 1st Advancement onward I owned CI/CD design — the GitHub Actions pipelines, the dual-track Dev/Prod deployment strategy on ECS, and the ArgoCD + Argo Rollouts GitOps migration and per-service strategy design on EKS — and co-designed the underlying Terraform infrastructure provisioning (ECS in the 1st Advancement, EKS in the final stage) together with a teammate who implemented the Terraform modules. Application-layer work (concurrency control, caching, event-driven patterns) was owned by other team members and is documented in their respective sections of the repo.
+This was a 5-person team project. At MVP stage I built the Review domain CRUD. From the 1st Advancement onward I owned CI/CD design — the GitHub Actions pipelines, the dual-track Dev/Prod deployment strategy on ECS, and the ArgoCD + Argo Rollouts GitOps migration and per-service strategy design on EKS, including the decision to consolidate from a mixed Canary/Blue-Green approach to Blue-Green across all services — and co-designed the underlying Terraform infrastructure provisioning (ECS in the 1st Advancement, EKS in the final stage) together with a teammate who implemented the Terraform modules. Application-layer work (concurrency control, caching, event-driven patterns) was owned by other team members and is documented in their respective sections of the repo.
