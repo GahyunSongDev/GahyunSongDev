@@ -2,8 +2,6 @@
 
 A crowdfunding platform built by a 5-person team (Team Luminous) — the full transaction flow from a seller opening a funding campaign to a backer paying and the campaign resolving as successful or failed, on AWS-native infrastructure. My focus was Terraform IaC and the async payment-processing infrastructure.
 
-*Period: 2023.03 – 2023.07 · Team of 5*
-
 ---
 
 ## Goal
