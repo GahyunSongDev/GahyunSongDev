@@ -31,7 +31,7 @@ Capstone project for a startup neobank serving U.S. military veterans, working d
 ---
 
 ### Serverless Event-Driven Infrastructure — Code States Bootcamp
-[View Repo →](https://github.com/gahyun8876/practice-final.git)
+[View Repo →](https://github.com/gahyun8876/practice-final.git)· [Full Write-up →](./crowdfunding-payment-system.md)
 
 Designed and built a serverless, event-driven backend architecture (API Gateway → Lambda → SNS/SQS) with fully modularized infrastructure-as-code.
 
